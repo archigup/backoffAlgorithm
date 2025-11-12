@@ -39,22 +39,23 @@
 
 BackoffAlgorithmStatus_t BackoffAlgorithm_GetNextBackoff( BackoffAlgorithmContext_t * pRetryContext,
                                                           uint32_t randomValue,
-                                                          uint16_t * pNextBackOff )
+                                                          uint32_t * pNextBackOff )
 {
     BackoffAlgorithmStatus_t status = BackoffAlgorithmSuccess;
 
     assert( pRetryContext != NULL );
     assert( pNextBackOff != NULL );
+    assert( pRetryContext->nextJitterMax != 0 );
 
     /* If maxRetryAttempts state of the context is set to the maximum, retry forever. */
     if( ( pRetryContext->maxRetryAttempts == BACKOFF_ALGORITHM_RETRY_FOREVER ) ||
         ( pRetryContext->attemptsDone < pRetryContext->maxRetryAttempts ) )
     {
-        /* The next backoff value is a random value between 0 and the maximum jitter value
+        /* The next backoff value is a random value between 1 and the maximum jitter value
          * for the retry attempt. */
 
-        /* Choose a random value for back-off time between 0 and the max jitter value. */
-        *pNextBackOff = ( uint16_t ) ( randomValue % ( pRetryContext->nextJitterMax + ( uint32_t ) 1U ) );
+        /* Choose a random value for back-off time between 1 and the max jitter value. */
+        *pNextBackOff = ( randomValue % pRetryContext->nextJitterMax ) + 1U;
 
         /* Increment the retry attempt. */
         pRetryContext->attemptsDone++;
@@ -84,11 +85,12 @@ BackoffAlgorithmStatus_t BackoffAlgorithm_GetNextBackoff( BackoffAlgorithmContex
 /*-----------------------------------------------------------*/
 
 void BackoffAlgorithm_InitializeParams( BackoffAlgorithmContext_t * pContext,
-                                        uint16_t backOffBase,
+                                        uint32_t backOffBase,
                                         uint16_t maxBackOff,
                                         uint32_t maxAttempts )
 {
     assert( pContext != NULL );
+    assert( backOffBase != 0 );
 
     /* Initialize the context with parameters used in calculating the backoff
      * value for the next retry attempt. */
